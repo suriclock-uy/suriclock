@@ -19,4 +19,4 @@ application = get_wsgi_application()
 """
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'suriclock.settings')
-   application = get_wsgi_application()
+application = get_wsgi_application()
