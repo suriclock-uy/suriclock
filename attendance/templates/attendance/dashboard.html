@@ -1,0 +1,154 @@
+{% extends 'attendance/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="m-0">Hola, {{ user.first_name }} 👋</h3>
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Salir</a>
+            </div>
+            <p class="text-muted">Selecciona una acción para registrar tu horario.</p>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-6">
+                <button class="btn btn-success w-100 py-4 rounded-4 shadow-sm" onclick="startScanner('entrada')">
+                    <div class="fs-1 mb-2">☀️</div>
+                    <div class="fw-bold">Entrada</div>
+                </button>
+            </div>
+            <div class="col-6">
+                <button class="btn btn-danger w-100 py-4 rounded-4 shadow-sm" onclick="startScanner('salida')">
+                    <div class="fs-1 mb-2">🌙</div>
+                    <div class="fw-bold">Salida</div>
+                </button>
+            </div>
+        </div>
+
+        <div id="scanner-container" class="mt-4 d-none">
+            <div class="card p-3 text-center">
+                <h5>Escanea el QR del Sector</h5>
+                <div id="reader" style="width: 100%"></div>
+                {% extends 'attendance/base.html' %}
+
+                {% block content %}
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="card p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h3 class="m-0">Hola, {{ user.first_name }} 👋</h3>
+                                <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Salir</a>
+                            </div>
+                            <p class="text-muted">Selecciona una acción para registrar tu horario.</p>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <button class="btn btn-success w-100 py-4 rounded-4 shadow-sm"
+                                    onclick="startScanner('entrada')">
+                                    <div class="fs-1 mb-2">☀️</div>
+                                    <div class="fw-bold">Entrada</div>
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-danger w-100 py-4 rounded-4 shadow-sm"
+                                    onclick="startScanner('salida')">
+                                    <div class="fs-1 mb-2">🌙</div>
+                                    <div class="fw-bold">Salida</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="scanner-container" class="mt-4 d-none">
+                            <div class="card p-3 text-center">
+                                <h5>Escanea el QR del Sector</h5>
+                                <div id="reader" style="width: 100%"></div>
+                                <button class="btn btn-secondary mt-3" onclick="stopScanner()">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+                <script>
+                    let html5QrcodeScanner;
+                    let currentType = '';
+
+                    function startScanner(type) {
+                        currentType = type;
+                        document.getElementById('scanner-container').classList.remove('d-none');
+
+                        html5QrcodeScanner = new Html5QrcodeScanner(
+                            "reader", { fps: 10, qrbox: 250 });
+
+                        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+                    }
+
+                    function stopScanner() {
+                        if (html5QrcodeScanner) {
+                            html5QrcodeScanner.clear();
+                        }
+                        document.getElementById('scanner-container').classList.add('d-none');
+                    }
+
+                    function onScanSuccess(decodedText, decodedResult) {
+                        // Stop scanning
+                        stopScanner();
+
+                        // Show loading
+                        alert(`QR Detectado. Obteniendo ubicación y enviando...`);
+
+                        // Try to get location
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                                (position) => {
+                                    sendAttendance(decodedText, currentType, position.coords.latitude, position.coords.longitude);
+                                },
+                                (error) => {
+                                    console.warn("Error de ubicación:", error);
+                                    // Try sending without location (backend will decide if it's allowed)
+                                    sendAttendance(decodedText, currentType, null, null);
+                                },
+                                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                            );
+                        } else {
+                            sendAttendance(decodedText, currentType, null, null);
+                        }
+                    }
+
+                    function onScanFailure(error) {
+                        // handle scan failure, usually better to ignore and keep scanning.
+                        // console.warn(`Code scan error = ${error}`);
+                    }
+
+                    function sendAttendance(sectorId, type, lat, lon) {
+                        fetch('/mark/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': '{{ csrf_token }}'
+                            },
+                            body: JSON.stringify({
+                                sector_id: sectorId,
+                                tipo: type,
+                                lat: lat,
+                                lon: lon
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'ok') {
+                                    alert('✅ ' + data.message);
+                                    location.reload();
+                                } else {
+                                    alert('❌ Error: ' + data.message);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('❌ Error de conexión');
+                            });
+                    }
+                </script>
+                {% endblock %}
