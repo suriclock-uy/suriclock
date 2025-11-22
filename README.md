@@ -1,158 +1,132 @@
 <div align="center">
 
-# QR Attendance System
+# Suriclock · Sistema de Control Horario
 
-![image](https://github.com/AzeemIdrisi/QR-Attendance-System/assets/112647789/dbc0c061-76d0-45bb-b5da-7f4373ffd073)
+Plataforma Django para registrar asistencia con kioscos QR, panel administrativo y sincronización con Google Sheets.
 
 </div>
 
-## Table of Contents
+## Tabla de contenidos
 
-- [Overview](#overview)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
-- [Usage](#usage)
-- [Screenshots](#screenshots)
-- [License](#license)
-- [Contributions](#contributions)
-- [Developers](#develpers)
+1. [Descripción general](#descripción-general)
+2. [Arquitectura y módulos](#arquitectura-y-módulos)
+3. [Características principales](#características-principales)
+4. [Requisitos previos](#requisitos-previos)
+5. [Puesta en marcha rápida](#puesta-en-marcha-rápida)
+6. [Variables de entorno](#variables-de-entorno)
+7. [Operación diaria](#operación-diaria)
+8. [Mantenimiento y tareas programadas](#mantenimiento-y-tareas-programadas)
+9. [Pruebas automatizadas](#pruebas-automatizadas)
+10. [Estructura del repositorio](#estructura-del-repositorio)
+11. [Créditos](#créditos)
 
-## Overview
+## Descripción general
 
-The QR Code Attendance System is an efficient,fast and user-friendly tool for tracking attendance using QR codes. It utilizes HTML, CSS, and Django to create a web-based interface for marking attendance. This system is designed to work seamlessly when devices are connected to the __Same College Local Network__.
+Suriclock digitaliza el proceso de marcación de personal mediante QR o ingreso manual supervisado. Los empleados realizan marcajes desde un kiosco optimizado para tablets, mientras que RRHH administra sectores, licencias y reportes desde un panel seguro. Toda la información queda disponible en la base de datos local y, opcionalmente, en Google Sheets para análisis adicional.
 
-The teacher/faculty can display the QR Code using classroom projector so that present students can scan and mark their attendance.
+## Arquitectura y módulos
 
-## Features
+- `attendance`: núcleo de negocio (modelos, vistas de administración y kiosco, utilidades, comandos).
+- `FacultyView` / `StudentView`: frontales heredados para casos académicos (QR en aula).
+- `suriclock`: proyecto Django, configuración y URLs raíz.
+- `docs/`: guías específicas (Apps Script, etc.).
+- `pwa/`: manifiesto y *service worker* opcionales para el kiosco.
 
-- **Automatic IP Fetching:** It fetch your IPv4 address automatically and Generate a QR code based on that IP to enable connections within the classroom.
-- **Faculty Panel:** It has a Faculty View Panel that enables the teacher to remove duplicate or proxy attendances based on count.
-- **User-Friendly Interface:** A straightforward web interface for effortless attendance management.
-- **Real-Time Tracking:** Mark attendance by scanning QR codes with real-time updates.
-- **Accessibility:** Easily access attendance records for quick reference.
+El stack principal incluye Django 4.2, PostgreSQL/SQLite (via `dj-database-url`), autenticación estándar y entrega de estáticos con WhiteNoise.
 
-## Prerequisites
+## Características principales
 
-Before you begin, ensure you have the following prerequisites installed:
+- Gestión de empleados, sectores con geocercas y credenciales PIN.
+- Marcaciones con soporte de foto, geolocalización y distintos tipos (entrada, salida, descansos).
+- Dashboard administrativo con métricas diarias, solicitudes de reseteo de PIN y licencias.
+- Reporte de horas con cálculo de extras al 50 %/100 % y nocturnas.
+- Sincronización opcional hacia Google Sheets (`sync_sheets`).
+- Limpieza automática de fotografías antiguas (`purge_old_photos`).
+- Kiosco preparado para PWA/offline y cambio de PIN por el empleado.
 
-- **Python3**
-- **Django**
-- **qrcode**
-- **Web Browser:** Required for accessing the system interface.
+## Requisitos previos
 
-## Setup
+- Python 3.11+
+- `pip` y entorno virtual opcional
+- Acceso a SQLite (por defecto) o PostgreSQL
+- Credenciales de servicio de Google si se activará la sincronización
 
-1. **Clone the Repository:**
+## Puesta en marcha rápida
 
-   ```
-   git clone https://github.com/AzeemIdrisi/QR-Attendance-System
-   ```
+```bash
+git clone https://github.com/<tu-org>/suriclock.git
+cd suriclock
+python -m venv venv && source venv/bin/activate  # opcional pero recomendado
+pip install --upgrade pip
+pip install -r requirements.txt
+cp env.example .env
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver 0.0.0.0:8000
+```
 
-2. **Navigate to the Project Directory:**
+Abre `http://localhost:8000` para acceder al kiosco y `http://localhost:8000/admin/` para el backoffice.
 
-   ```
-   cd QR-Attendance-System
-   ```
+## Variables de entorno
 
+El archivo `env.example` documenta todas las claves soportadas. Las más relevantes:
 
-4. **Install dependencies:**
+| Variable | Descripción |
+| --- | --- |
+| `SECRET_KEY` | Clave criptográfica de Django. Genera una nueva para producción. |
+| `DEBUG` | `True` solo en desarrollo. |
+| `ALLOWED_HOSTS` | Lista separada por comas. Incluye dominio público o *.railway.app*. |
+| `CSRF_TRUSTED_ORIGINS` | Orígenes seguros para formularios. |
+| `DATABASE_URL` | Cadena compatible con `dj-database-url` (`postgres://`, `sqlite:///path`, etc.). |
+| `DJANGO_LOG_LEVEL` | Nivel de log (`INFO`, `WARNING`, etc.). |
 
-   ```
-   pip install -r requirements.txt
-   ```
-4. **Run the Django Server:**
+Guarda credenciales de Google en `google_sheets/credentials.json` y configura `SystemConfig.google_sheet_id` desde el panel o shell.
 
-   ```
-   python manage.py runserver 0.0.0.0:8000 
-   ```
+## Operación diaria
 
-5. **Access the System:**
+1. **Panel Admin**: permite crear empleados, asignar sectores y aprobar licencias (`/admin/dashboard`).
+2. **Kiosco**: expone QR con la IP local y permite marcar usando PIN o cámara (`/kiosk`).
+3. **Reset de PIN**: los empleados solicitan cambios; el administrador atiende desde la vista de empleados.
+4. **Reportes**: la sección de asistencia consolida horas, extras y nocturnidad para los últimos 30 días.
 
-   Open your web browser and go to `http://localhost:8000` to use the system.
+Consulta `docs/APPS_SCRIPT_GUIDE.md` para integrar Apps Script o exponer el kiosco en pantallas dedicadas.
 
-### Setting up Firewall settings for the first time
+## Mantenimiento y tareas programadas
 
-- Open Windows Defender Firewall Settings:
+| Tarea | Comando | Frecuencia sugerida |
+| --- | --- | --- |
+| Limpiar fotos (>30 días) | `python manage.py purge_old_photos` | Diario |
+| Sincronizar Google Sheets | `python manage.py sync_sheets` | Cada hora o al cierre |
+| Copia de seguridad BD | `python manage.py dumpdata > backup.json` | Semanal |
 
-   - Press Win + S to open the search bar.
-   - Type "Windows Defender Firewall" and select the corresponding result.
+Agrega estas tareas a `cron`, `systemd timers` o el scheduler de tu hosting (Railway, Heroku, etc.).
 
-- Create an Inbound Rule:
+## Pruebas automatizadas
 
-   - On the left panel, click on "Advanced settings."
-   - In the left panel, select "Inbound Rules."
-   - In the right panel, click on "New Rule..." to open the New Inbound Rule Wizard.
+La carpeta `attendance/tests/` cubre vistas admin, flujo de PIN, licencias y utilidades. Ejecuta:
 
-- Select Rule Type:
+```bash
+python manage.py test
+```
 
-   - Choose "Port" and click "Next."
+Integra este comando en tu pipeline CI antes de desplegar a producción.
 
-- Specify Port and Protocol:
+## Estructura del repositorio
 
-   - Choose "Specific local ports" and enter the port number your Django server is running on (e.g., 8000).
-   - Click "Next."
+```text
+attendance/        # App principal (modelos, vistas, templates, tests)
+FacultyView/       # Interfaces para docentes
+StudentView/       # Interfaces para estudiantes
+google_sheets/     # Scripts y credenciales de integración
+docs/              # Guías adicionales
+pwa/               # Manifest y service worker
+suriclock/         # Configuración del proyecto Django
+manage.py
+```
 
-- Choose Action:
+## Créditos
 
-   - Choose "Allow the connection" and click "Next."
+- Basado originalmente en el proyecto “QR Attendance System” de Team Hokage.
+- Mejoras, localización y capacidades de RRHH aportadas por la comunidad Suriclock.
 
-- When Does the Rule Apply?
-
-   - Keep all three options (Domain, Private, Public) checked.
-   - Click "Next."
-
-- Specify Rule Name:
-
-   - Enter a name for your rule (e.g., "Django Server").
-   - Optionally, provide a description.
-   - Click "Finish."
-
-- Check the Inbound Rules:
-
-   - In the left panel, click on "Inbound Rules."
-   - Find your newly created rule in the list.
-
-- Test the Connection:
-
-   On another device within the same local network, try to access your Django server using the local IP address and port number or By simply scanning the displayed QR Code.
-
-## Usage
-
-1. **Open the System in Your Web Browser:**
-
-   Access the system by opening your web browser and visiting `http://localhost:8000`.
-
-
-2. **Display QR Codes:**
-
-   Display the QR codes to students or attendees.
-
-3. **Mark Attendance:**
-
-   To mark attendance, scan the QR codes using a device connected to the same local network.
-
-4. **Real-Time Tracking:**
-
-   The attendance records will be updated in real-time, ensuring accurate tracking.
-
-## Screenshots
-
-### Admin Page
-![image](https://github.com/AzeemIdrisi/QR-Attendance-System/assets/112647789/e4c9f2d8-6b8e-44de-a63d-f7e5db45383e)
-
-### Student Page
-![image](https://github.com/AzeemIdrisi/QR-Attendance-System/assets/112647789/a8e2f4a7-831c-4ac5-8e1b-c917a9ca9001)
-
-### Submission Successful Page
-![image](https://github.com/AzeemIdrisi/QR-Attendance-System/assets/112647789/0f77779e-7648-4356-84c0-7db58b3e786c)
-
-
-## Contributions
-
-We welcome contributions from the community! If you'd like to contribute to this project, please follow our [contribution guidelines](CONTRIBUTING.md).
-
-## Developers
-Created by __Team Hokage__ during __Live The Code 2.0__ Hackathon.
-
-Contributors : [Mohd Azeem](https://github.com/AzeemIdrisi), [Dheeraj Jha](https://github.com/Dheerajjha451), [Shantanu Pant](https://github.com/Shanty34)
+¿Quieres contribuir? Envía un PR con pruebas actualizadas o abre un issue describiendo la mejora/bug. Mantén el estilo PEP 8 y actualiza documentación cuando corresponda.
