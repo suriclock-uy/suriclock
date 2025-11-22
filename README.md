@@ -2,131 +2,131 @@
 
 # Suriclock · Sistema de Control Horario
 
-Plataforma Django para registrar asistencia con kioscos QR, panel administrativo y sincronización con Google Sheets.
+**Plataforma moderna para gestión de asistencia y RRHH**
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-4.2-092E20?style=flat&logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Suriclock digitaliza el control de asistencia mediante kioscos QR inteligentes y un panel administrativo completo. Diseñado para cumplir con normativas laborales (como BPS Uruguay), facilita la gestión de horas, extras y licencias.
+
+[Características](#características-principales) • [Instalación](#puesta-en-marcha-rápida) • [Capturas](#galería-de-capturas)
 
 </div>
 
-## Tabla de contenidos
+---
 
-1. [Descripción general](#descripción-general)
-2. [Arquitectura y módulos](#arquitectura-y-módulos)
-3. [Características principales](#características-principales)
-4. [Requisitos previos](#requisitos-previos)
-5. [Puesta en marcha rápida](#puesta-en-marcha-rápida)
-6. [Variables de entorno](#variables-de-entorno)
-7. [Operación diaria](#operación-diaria)
-8. [Mantenimiento y tareas programadas](#mantenimiento-y-tareas-programadas)
-9. [Pruebas automatizadas](#pruebas-automatizadas)
-10. [Estructura del repositorio](#estructura-del-repositorio)
-11. [Créditos](#créditos)
+## Galería de Capturas
 
-## Descripción general
+### 📱 Kiosco de Asistencia
+Interfaz optimizada para tablets y móviles. Permite marcación rápida por QR o PIN personal.
 
-Suriclock digitaliza el proceso de marcación de personal mediante QR o ingreso manual supervisado. Los empleados realizan marcajes desde un kiosco optimizado para tablets, mientras que RRHH administra sectores, licencias y reportes desde un panel seguro. Toda la información queda disponible en la base de datos local y, opcionalmente, en Google Sheets para análisis adicional.
+| Acceso Seguro | Marcación Rápida |
+|:---:|:---:|
+| ![Acceso Kiosco](docs/images/kiosk_access.png) | ![Kiosco Home](docs/images/kiosk_home.png) |
+| *Protección por contraseña para modo kiosco* | *Teclado numérico y código QR dinámico* |
 
-## Arquitectura y módulos
+### 💻 Panel Administrativo
+Gestión centralizada para el equipo de RRHH.
 
-- `attendance`: núcleo de negocio (modelos, vistas de administración y kiosco, utilidades, comandos).
-- `FacultyView` / `StudentView`: frontales heredados para casos académicos (QR en aula).
-- `suriclock`: proyecto Django, configuración y URLs raíz.
-- `docs/`: guías específicas (Apps Script, etc.).
-- `pwa/`: manifiesto y *service worker* opcionales para el kiosco.
+| Login Admin | Dashboard | Gestión de Empleados |
+|:---:|:---:|:---:|
+| ![Login](docs/images/admin_login.png) | ![Dashboard](docs/images/admin_dashboard.png) | ![Empleados](docs/images/admin_employees.png) |
 
-El stack principal incluye Django 4.2, PostgreSQL/SQLite (via `dj-database-url`), autenticación estándar y entrega de estáticos con WhiteNoise.
+---
 
-## Características principales
+## Descripción General
 
-- Gestión de empleados, sectores con geocercas y credenciales PIN.
-- Marcaciones con soporte de foto, geolocalización y distintos tipos (entrada, salida, descansos).
-- Dashboard administrativo con métricas diarias, solicitudes de reseteo de PIN y licencias.
-- Reporte de horas con cálculo de extras al 50 %/100 % y nocturnas.
-- Sincronización opcional hacia Google Sheets (`sync_sheets`).
-- Limpieza automática de fotografías antiguas (`purge_old_photos`).
-- Kiosco preparado para PWA/offline y cambio de PIN por el empleado.
+Suriclock elimina las planillas manuales y los relojes biométricos costosos.
+- **Para el Empleado:** Marcación en segundos, consulta de PIN y transparencia.
+- **Para RRHH:** Cálculo automático de horas trabajadas, extras (50%/100%) y nocturnidad. Exportación directa a Google Sheets.
 
-## Requisitos previos
+## Características Principales
 
-- Python 3.11+
-- `pip` y entorno virtual opcional
-- Acceso a SQLite (por defecto) o PostgreSQL
-- Credenciales de servicio de Google si se activará la sincronización
+- **🏢 Gestión Integral:** Altas, bajas y modificaciones de empleados y sectores.
+- **📍 Geocercas:** Restricción de marcajes por ubicación GPS (opcional por sector).
+- **⏰ Cálculo de Horas:** Procesamiento automático de jornadas, descansos y horas extra.
+- **📊 Reportes:** Dashboard con métricas en tiempo real y exportación de datos.
+- **🔗 Sincronización:** Integración nativa con Google Sheets para respaldos y análisis.
+- **🧹 Mantenimiento:** Limpieza automática de fotos antiguas para optimizar espacio.
 
-## Puesta en marcha rápida
+## Arquitectura
+
+El sistema está construido sobre **Django 4.2**, utilizando tecnologías robustas y probadas:
+- **Backend:** Python, Django, WhiteNoise.
+- **Base de Datos:** PostgreSQL (Producción) / SQLite (Desarrollo).
+- **Frontend:** Bootstrap 5, HTML5, JavaScript (Vanilla).
+- **Módulos:**
+    - `attendance`: Core del negocio.
+    - `google_sheets`: Integración con API de Google.
+    - `pwa`: Capacidades offline y manifest.
+
+## Puesta en Marcha Rápida
+
+### Requisitos
+- Python 3.11+
+- Git
+
+### Instalación
 
 ```bash
+# 1. Clonar repositorio
 git clone https://github.com/<tu-org>/suriclock.git
 cd suriclock
-python -m venv venv && source venv/bin/activate  # opcional pero recomendado
-pip install --upgrade pip
+
+# 2. Configurar entorno virtual
+python -m venv venv
+source venv/bin/activate  # Windows: .\venv\Scripts\activate
+
+# 3. Instalar dependencias
 pip install -r requirements.txt
+
+# 4. Configurar variables
 cp env.example .env
+# Edita .env con tus credenciales
+
+# 5. Inicializar base de datos
 python manage.py migrate
 python manage.py createsuperuser
+
+# 6. Iniciar servidor
 python manage.py runserver 0.0.0.0:8000
 ```
 
-Abre `http://localhost:8000` para acceder al kiosco y `http://localhost:8000/admin/` para el backoffice.
+Accede a:
+- **Kiosco:** `http://localhost:8000`
+- **Admin:** `http://localhost:8000/admin/`
 
-## Variables de entorno
+## Operación Diaria
 
-El archivo `env.example` documenta todas las claves soportadas. Las más relevantes:
+1.  **Panel Admin**: Configura los **Sectores** y da de alta a los **Empleados**.
+2.  **Kiosco**: Despliega el kiosco en una tablet en el lugar de trabajo.
+3.  **Marcación**: Los empleados usan su PIN o escanean el QR.
+4.  **Cierre**: Revisa el reporte de asistencia y sincroniza con Google Sheets.
 
-| Variable | Descripción |
-| --- | --- |
-| `SECRET_KEY` | Clave criptográfica de Django. Genera una nueva para producción. |
-| `DEBUG` | `True` solo en desarrollo. |
-| `ALLOWED_HOSTS` | Lista separada por comas. Incluye dominio público o *.railway.app*. |
-| `CSRF_TRUSTED_ORIGINS` | Orígenes seguros para formularios. |
-| `DATABASE_URL` | Cadena compatible con `dj-database-url` (`postgres://`, `sqlite:///path`, etc.). |
-| `DJANGO_LOG_LEVEL` | Nivel de log (`INFO`, `WARNING`, etc.). |
+## Mantenimiento
 
-Guarda credenciales de Google en `google_sheets/credentials.json` y configura `SystemConfig.google_sheet_id` desde el panel o shell.
-
-## Operación diaria
-
-1. **Panel Admin**: permite crear empleados, asignar sectores y aprobar licencias (`/admin/dashboard`).
-2. **Kiosco**: expone QR con la IP local y permite marcar usando PIN o cámara (`/kiosk`).
-3. **Reset de PIN**: los empleados solicitan cambios; el administrador atiende desde la vista de empleados.
-4. **Reportes**: la sección de asistencia consolida horas, extras y nocturnidad para los últimos 30 días.
-
-Consulta `docs/APPS_SCRIPT_GUIDE.md` para integrar Apps Script o exponer el kiosco en pantallas dedicadas.
-
-## Mantenimiento y tareas programadas
-
-| Tarea | Comando | Frecuencia sugerida |
+| Tarea | Comando | Frecuencia |
 | --- | --- | --- |
-| Limpiar fotos (>30 días) | `python manage.py purge_old_photos` | Diario |
-| Sincronizar Google Sheets | `python manage.py sync_sheets` | Cada hora o al cierre |
-| Copia de seguridad BD | `python manage.py dumpdata > backup.json` | Semanal |
+| Limpiar fotos antiguas | `python manage.py purge_old_photos` | Diario |
+| Sincronizar Sheets | `python manage.py sync_sheets` | Horario/Diario |
+| Backup BD | `python manage.py dumpdata > backup.json` | Semanal |
 
-Agrega estas tareas a `cron`, `systemd timers` o el scheduler de tu hosting (Railway, Heroku, etc.).
-
-## Pruebas automatizadas
-
-La carpeta `attendance/tests/` cubre vistas admin, flujo de PIN, licencias y utilidades. Ejecuta:
-
-```bash
-python manage.py test
-```
-
-Integra este comando en tu pipeline CI antes de desplegar a producción.
-
-## Estructura del repositorio
+## Estructura del Proyecto
 
 ```text
-attendance/        # App principal (modelos, vistas, templates, tests)
-FacultyView/       # Interfaces para docentes
-StudentView/       # Interfaces para estudiantes
-google_sheets/     # Scripts y credenciales de integración
-docs/              # Guías adicionales
-pwa/               # Manifest y service worker
-suriclock/         # Configuración del proyecto Django
-manage.py
+suriclock/
+├── attendance/      # Lógica principal y vistas
+├── docs/            # Documentación y capturas
+├── google_sheets/   # Scripts de integración
+├── media/           # Archivos generados (fotos, etc)
+├── pwa/             # Configuración Progressive Web App
+└── manage.py        # CLI de Django
 ```
 
 ## Créditos
 
-- Basado originalmente en el proyecto “QR Attendance System” de Team Hokage.
-- Mejoras, localización y capacidades de RRHH aportadas por la comunidad Suriclock.
+Desarrollado con ❤️ para modernizar la gestión de RRHH.
+Basado en conceptos de "QR Attendance System" y mejorado por la comunidad Suriclock.
 
-¿Quieres contribuir? Envía un PR con pruebas actualizadas o abre un issue describiendo la mejora/bug. Mantén el estilo PEP 8 y actualiza documentación cuando corresponda.
+¿Encontraste un bug? [Abre un issue](https://github.com/<tu-org>/suriclock/issues).
