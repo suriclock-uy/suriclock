@@ -129,4 +129,6 @@ suriclock/
 Desarrollado con ❤️ para modernizar la gestión de RRHH.
 Basado en conceptos de "QR Attendance System" y mejorado por la comunidad Suriclock.
 
+ ## DEDICADO A ALVARO (EL MUERTO)
+
 ¿Encontraste un bug? [Abre un issue](https://github.com/<tu-org>/suriclock/issues).
